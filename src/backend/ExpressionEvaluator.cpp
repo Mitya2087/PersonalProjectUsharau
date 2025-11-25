@@ -1,7 +1,88 @@
 #include "ExpressionEvaluator.h"
 #include "MathUtils.h"
+#include <algorithm>
 #include <cctype>
+#include <sstream>
 #include <stdexcept>
+
+double ExpressionEvaluator::evaluate(const std::string &expression) {
+  auto tokens = tokenize(expression);
+  auto rpn = toRPN(tokens);
+  return evaluateRPN(rpn);
+}
+
+std::vector<std::string>
+ExpressionEvaluator::tokenize(const std::string &expr) {
+  std::vector<std::string> tokens;
+  std::string current;
+
+  for (size_t i = 0; i < expr.length(); ++i) {
+    char c = expr[i];
+
+    if (std::isspace(c))
+      continue;
+
+    if (std::isdigit(c) || c == '.') {
+      current += c;
+    } else if (std::isalpha(c)) {
+      current += c;
+    } else {
+      if (!current.empty()) {
+        tokens.push_back(current);
+        current.clear();
+      }
+      tokens.push_back(std::string(1, c));
+    }
+  }
+
+  if (!current.empty()) {
+    tokens.push_back(current);
+  }
+
+  return tokens;
+}
+
+std::vector<std::string>
+ExpressionEvaluator::toRPN(const std::vector<std::string> &tokens) {
+  std::vector<std::string> output;
+  std::stack<std::string> operators;
+
+  for (const auto &token : tokens) {
+    if (std::isdigit(token[0]) ||
+        (token.length() > 1 && token[0] == '-' && std::isdigit(token[1]))) {
+      output.push_back(token);
+    } else if (isFunction(token)) {
+      operators.push(token);
+    } else if (token == "(") {
+      operators.push(token);
+    } else if (token == ")") {
+      while (!operators.empty() && operators.top() != "(") {
+        output.push_back(operators.top());
+        operators.pop();
+      }
+      if (!operators.empty())
+        operators.pop();
+      if (!operators.empty() && isFunction(operators.top())) {
+        output.push_back(operators.top());
+        operators.pop();
+      }
+    } else if (isOperator(token)) {
+      while (!operators.empty() && operators.top() != "(" &&
+             precedence(operators.top()) >= precedence(token)) {
+        output.push_back(operators.top());
+        operators.pop();
+      }
+      operators.push(token);
+    }
+  }
+
+  while (!operators.empty()) {
+    output.push_back(operators.top());
+    operators.pop();
+  }
+
+  return output;
+}
 
 double ExpressionEvaluator::evaluateRPN(const std::vector<std::string> &rpn) {
   std::stack<double> values;
@@ -54,6 +135,16 @@ double ExpressionEvaluator::evaluateRPN(const std::vector<std::string> &rpn) {
   if (values.size() != 1)
     throw std::runtime_error("Invalid expression");
   return values.top();
+}
+
+int ExpressionEvaluator::precedence(const std::string &op) {
+  if (op == "+" || op == "-")
+    return 1;
+  if (op == "*" || op == "/")
+    return 2;
+  if (op == "^")
+    return 3;
+  return 0;
 }
 
 bool ExpressionEvaluator::isOperator(const std::string &token) {
