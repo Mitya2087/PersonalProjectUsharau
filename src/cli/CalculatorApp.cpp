@@ -1,7 +1,7 @@
 #include "CalculatorApp.h"
-#include "ExpressionEvaluator.h"
-#include "Modes.h"
-#include "Sorter.h"
+#include "../backend/ExpressionEvaluator.h"
+#include "../backend/Sorter.h"
+#include "../cli/Modes.h"
 #include <iostream>
 #include <limits>
 #include <memory>

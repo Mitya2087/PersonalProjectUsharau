@@ -1,7 +1,7 @@
 #ifndef CALCULATORAPP_H
 #define CALCULATORAPP_H
 
-#include "History.h"
+#include "../backend/History.h"
 #include <memory>
 
 class Mode;
@@ -23,4 +23,4 @@ private:
   History history_;
 };
 
-#endif // CALCULATORAPP_H
+#endif
