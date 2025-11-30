@@ -18,6 +18,7 @@ private:
   void handleModeSelection(int choice);
   void evaluateExpression();
   void manageHistory();
+  void manageDates();
   void sortArrays();
 
   History history_;

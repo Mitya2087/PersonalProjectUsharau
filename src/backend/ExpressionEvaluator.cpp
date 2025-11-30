@@ -100,11 +100,12 @@ double ExpressionEvaluator::evaluateRPN(const std::vector<std::string> &rpn) {
       if (token == "sqrt")
         values.push(MathUtils::my_sqrt(val));
       else if (token == "sin")
-        values.push(MathUtils::my_sin(val));
+        // Convert degrees to radians for user convenience
+        values.push(MathUtils::my_sin(MathUtils::to_radians(val)));
       else if (token == "cos")
-        values.push(MathUtils::my_cos(val));
+        values.push(MathUtils::my_cos(MathUtils::to_radians(val)));
       else if (token == "tan")
-        values.push(MathUtils::my_tan(val));
+        values.push(MathUtils::my_tan(MathUtils::to_radians(val)));
       else if (token == "log")
         values.push(MathUtils::my_log(val));
       else if (token == "exp")

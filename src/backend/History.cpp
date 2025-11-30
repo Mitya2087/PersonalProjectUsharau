@@ -1,4 +1,5 @@
 #include "History.h"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 
@@ -56,8 +57,9 @@ void History::save(const std::string &filename) const {
     return;
   }
 
-  for (const auto &entry : entries_) {
-    file << entry.operation << "|" << entry.result << "\n";
+  // Save only entries up to currentIndex_ (not undone entries)
+  for (int i = 0; i <= currentIndex_ && i < (int)entries_.size(); ++i) {
+    file << entries_[i].operation << "|" << entries_[i].result << "\n";
   }
 
   std::cout << "History saved to " << filename << std::endl;
@@ -83,6 +85,94 @@ void History::load(const std::string &filename) {
 
   currentIndex_ = entries_.empty() ? -1 : entries_.size() - 1;
   std::cout << "History loaded from " << filename << std::endl;
+}
+
+void History::saveBinary(const std::string &filename) const {
+  std::ofstream file(filename, std::ios::binary);
+  if (!file) {
+    std::cout << "Failed to open file for binary writing.\n";
+    return;
+  }
+
+  // Magic number and version
+  const char magic[4] = {'H', 'I', 'S', 'T'};
+  file.write(magic, 4);
+
+  uint32_t version = 1;
+  file.write(reinterpret_cast<const char *>(&version), sizeof(version));
+
+  // Entry count - only save entries up to currentIndex_
+  uint32_t count = (currentIndex_ >= 0) ? (currentIndex_ + 1) : 0;
+  file.write(reinterpret_cast<const char *>(&count), sizeof(count));
+
+  // Write each entry (only up to currentIndex_)
+  for (int i = 0; i <= currentIndex_ && i < (int)entries_.size(); ++i) {
+    const auto &entry = entries_[i];
+    // Operation string length and data
+    uint32_t opLength = entry.operation.length();
+    file.write(reinterpret_cast<const char *>(&opLength), sizeof(opLength));
+    file.write(entry.operation.c_str(), opLength);
+
+    // Result (double)
+    file.write(reinterpret_cast<const char *>(&entry.result),
+               sizeof(entry.result));
+  }
+
+  // Current index
+  int32_t currentIdx = currentIndex_;
+  file.write(reinterpret_cast<const char *>(&currentIdx), sizeof(currentIdx));
+
+  std::cout << "History saved to binary file " << filename << std::endl;
+}
+
+void History::loadBinary(const std::string &filename) {
+  std::ifstream file(filename, std::ios::binary);
+  if (!file) {
+    std::cout << "Failed to open binary file for reading.\n";
+    return;
+  }
+
+  // Read and verify magic number
+  char magic[4];
+  file.read(magic, 4);
+  if (magic[0] != 'H' || magic[1] != 'I' || magic[2] != 'S' ||
+      magic[3] != 'T') {
+    std::cout << "Invalid binary history file format.\n";
+    return;
+  }
+
+  // Read version
+  uint32_t version;
+  file.read(reinterpret_cast<char *>(&version), sizeof(version));
+
+  // Read entry count
+  uint32_t count;
+  file.read(reinterpret_cast<char *>(&count), sizeof(count));
+
+  entries_.clear();
+
+  // Read each entry
+  for (uint32_t i = 0; i < count; ++i) {
+    // Read operation string
+    uint32_t opLength;
+    file.read(reinterpret_cast<char *>(&opLength), sizeof(opLength));
+
+    std::string operation(opLength, '\0');
+    file.read(&operation[0], opLength);
+
+    // Read result
+    double result;
+    file.read(reinterpret_cast<char *>(&result), sizeof(result));
+
+    entries_.emplace_back(operation, result);
+  }
+
+  // Read current index
+  int32_t currentIdx;
+  file.read(reinterpret_cast<char *>(&currentIdx), sizeof(currentIdx));
+  currentIndex_ = currentIdx;
+
+  std::cout << "History loaded from binary file " << filename << std::endl;
 }
 
 void History::clear() {

@@ -10,8 +10,15 @@ public:
   void display() const;
   bool undo();
   bool redo();
+
+  // Text format I/O
   void save(const std::string &filename) const;
   void load(const std::string &filename);
+
+  // Binary format I/O
+  void saveBinary(const std::string &filename) const;
+  void loadBinary(const std::string &filename);
+
   void clear();
 
 private:
