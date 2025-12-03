@@ -4,31 +4,34 @@
 #include <string>
 #include <vector>
 
+class History;
+
 class Mode {
 public:
   virtual ~Mode() = default;
-  virtual void run() = 0;
+  virtual void run(History *history = nullptr) = 0;
   virtual std::string getName() const = 0;
 };
 
 class StandardMode : public Mode {
 public:
-  void run() override;
+  void run(History *history = nullptr) override;
   std::string getName() const override { return "Standard Mode"; }
 };
 
 class ScientificMode : public Mode {
 public:
-  void run() override;
+  void run(History *history = nullptr) override;
   std::string getName() const override { return "Scientific Mode"; }
 };
 
 class ProgrammerMode : public Mode {
 public:
-  void run() override;
+  void run(History *history = nullptr) override;
   std::string getName() const override { return "Programmer Mode"; }
 
 private:
+  void handleBitwiseOperation(const std::string &op);
   std::string toBinary(long long n);
   std::string toHex(long long n);
   long long fromBinary(std::string s);
