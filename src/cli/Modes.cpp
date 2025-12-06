@@ -90,11 +90,15 @@ void ScientificMode::run(History *history) {
 void ProgrammerMode::run(History *history) {
   std::cout << "\n=== Programmer Mode ===\n";
   std::cout << "Bitwise operations and base conversions.\n";
-  std::cout << "Commands:\n";
-  std::cout << "  AND, OR, XOR, NOT    - Bitwise operations\n";
-  std::cout << "  << >>                - Bit shifts\n";
-  std::cout << "  OR enter any number/expression to see in BIN, DEC, HEX\n";
-  std::cout << "\nType 'q' or 'quit' to return to main menu.\n\n";
+  std::cout << "Supported operations:\n";
+  std::cout << "  &   - AND         Example: 12 & 10\n";
+  std::cout << "  |   - OR          Example: 12 | 10\n";
+  std::cout << "  ^   - XOR         Example: 12 ^ 10\n";
+  std::cout << "  ~   - NOT         Example: ~ 12\n";
+  std::cout << "  <<  - Shift left  Example: 3 << 2\n";
+  std::cout << "  >>  - Shift right Example: 12 >> 2\n";
+  std::cout << "\nOr just enter a number to see it in DEC, HEX, BIN\n";
+  std::cout << "Type 'q' or 'quit' to return to main menu.\n\n";
 
   std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
@@ -112,59 +116,86 @@ void ProgrammerMode::run(History *history) {
     }
 
     try {
-      // Check if it's a bitwise operation command
-      if (input == "AND" || input == "OR" || input == "XOR" || input == "NOT" ||
-          input == "<<" || input == ">>") {
-        handleBitwiseOperation(input);
-      } else {
-        // Try to evaluate as expression or number
-        double result = ExpressionEvaluator::evaluate(input);
-        int intResult = static_cast<int>(result);
+      int result = evaluateBitwiseExpression(input);
 
-        std::cout << "DEC: " << intResult << std::endl;
-        std::cout << "HEX: " << toHex(intResult) << std::endl;
-        std::cout << "BIN: " << toBinary(intResult) << std::endl;
+      std::cout << "DEC: " << result << std::endl;
+      std::cout << "HEX: " << toHex(result) << std::endl;
+      std::cout << "BIN: " << toBinary(result) << std::endl;
+
+      if (history) {
+        history->addEntry(input, static_cast<double>(result));
       }
     } catch (const std::exception &e) {
       std::cout << "Error: " << e.what() << std::endl;
-      std::cout << "Tip: Use AND, OR, XOR, NOT, <<, >> for bitwise ops\n";
+      std::cout << "Tip: Use format like '3 << 2' or '12 & 10' or just '15'\n";
     }
   }
 }
 
-void ProgrammerMode::handleBitwiseOperation(const std::string &op) {
-  int a, b = 0;
-  std::cout << "Enter first number: ";
-  std::cin >> a;
-  std::cin.ignore();
+int ProgrammerMode::evaluateBitwiseExpression(const std::string &expr) {
+  std::istringstream iss(expr);
+  std::string token1, op, token2;
 
-  if (op != "NOT") {
-    std::cout << "Enter second number: ";
-    std::cin >> b;
-    std::cin.ignore();
+  // Try to parse as: number operator number
+  if (iss >> token1) {
+    // Check if it's just a number (for conversion)
+    if (!(iss >> op)) {
+      return parseNumber(token1);
+    }
+
+    if (op == "~") {
+      int a = parseNumber(token1 == "~" ? "" : token1);
+      if (token1 == "~") {
+        iss.str(expr.substr(1));
+        iss.clear();
+        iss >> token1;
+        a = parseNumber(token1);
+      }
+      return ~a;
+    }
+
+    // Binary operation
+    if (!(iss >> token2)) {
+      throw std::runtime_error("Missing second operand");
+    }
+
+    int a = parseNumber(token1);
+    int b = parseNumber(token2);
+
+    if (op == "&")
+      return a & b;
+    if (op == "|")
+      return a | b;
+    if (op == "^")
+      return a ^ b;
+    if (op == "<<")
+      return a << b;
+    if (op == ">>")
+      return a >> b;
+
+    throw std::runtime_error("Unknown operator: " + op);
   }
 
-  int result;
-  if (op == "AND") {
-    result = a & b;
-  } else if (op == "OR") {
-    result = a | b;
-  } else if (op == "XOR") {
-    result = a ^ b;
-  } else if (op == "NOT") {
-    result = ~a;
-  } else if (op == "<<") {
-    result = a << b;
-  } else if (op == ">>") {
-    result = a >> b;
-  } else {
-    throw std::runtime_error("Unknown operation");
+  throw std::runtime_error("Invalid expression format");
+}
+
+int ProgrammerMode::parseNumber(const std::string &str) {
+  if (str.empty()) {
+    throw std::runtime_error("Empty number");
   }
 
-  std::cout << "Result:\n";
-  std::cout << "  DEC: " << result << std::endl;
-  std::cout << "  HEX: " << toHex(result) << std::endl;
-  std::cout << "  BIN: " << toBinary(result) << std::endl;
+  // Check for hex (0x prefix)
+  if (str.length() > 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
+    return std::stoi(str, nullptr, 16);
+  }
+
+  // Check for binary (0b prefix)
+  if (str.length() > 2 && str[0] == '0' && (str[1] == 'b' || str[1] == 'B')) {
+    return std::stoi(str.substr(2), nullptr, 2);
+  }
+
+  // Decimal
+  return std::stoi(str);
 }
 
 std::string ProgrammerMode::toBinary(long long n) {

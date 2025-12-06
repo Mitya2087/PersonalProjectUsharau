@@ -31,7 +31,8 @@ public:
   std::string getName() const override { return "Programmer Mode"; }
 
 private:
-  void handleBitwiseOperation(const std::string &op);
+  int parseNumber(const std::string &str);
+  int evaluateBitwiseExpression(const std::string &expr);
   std::string toBinary(long long n);
   std::string toHex(long long n);
   long long fromBinary(std::string s);
