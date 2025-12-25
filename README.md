@@ -1,6 +1,6 @@
 # Extended Calculator
 
-**Консольное и GUI приложение "Расширенный калькулятор"**
+**Консольное приложение "Расширенный калькулятор"**
 
 **Автор:** Ушаров Дмитрий Павлович, Группа 1  
 **Курс:** Основы и методы программирования
@@ -12,13 +12,10 @@
 ### Калькулятор поддерживает:
 - **Standard Mode:** Базовая арифметика (+, -, *, /), квадратный корень
 - **Scientific Mode:** Тригонометрические функции, логарифмы, экспонента, степени
-- **Programmer Mode:** Битовые операции, конвертация систем счисления (BIN, DEC, HEX)
+- **Programmer Mode:** Битовые операции, конвертация систем счисления (BIN, DEC, HEX), поддержка выражений типа `3 << 2`
 - **History:** Сохранение истории вычислений с undo/redo
+- **Date Calculations:** Вычисление разницы между датами и добавление дней
 - **Array Sorting:** Сортировка массивов (Bubble, Quick, Merge Sort)
-
-### Две версии:
-1. **Qt GUI** (`calculator`) - Графический интерфейс с вкладками
-2. **Console CLI** (`calculator_cli`) - Консольное меню-driven приложение
 
 ---
 
@@ -27,12 +24,12 @@
 ### Зависимости:
 ```bash
 # Ubuntu/Debian
-sudo apt install cmake g++ qtbase5-dev
+sudo apt update
+sudo apt install cmake g++
 
 # Минимальные версии:
 # - CMake 3.14+
 # - C++17
-# - Qt5 (опционально, только для GUI)
 ```
 
 ---
@@ -53,50 +50,44 @@ make -j4
 ```
 
 ### Результаты сборки:
-- `calculator` - GUI версия (Qt5)
-- `calculator_cli` - Консольная версия
+- `calculator` - Консольная версия калькулятора
 - `calculator_tests` - Набор тестов (Google Test)
 
 ---
 
 ## Запуск
 
-### Графический интерфейс (Qt GUI)
-```bash
-./build/calculator
-```
-
 ### Консольная версия
 ```bash
-./build/calculator_cli
+./build/calculator
 ```
 
 ### Аргументы командной строки
 
 #### Прямые вычисления
 ```bash
-./build/calculator_cli --calc "2 + 2 * 3"
+./build/calculator --calc "2 + 2 * 3"
 # Output: 2 + 2 * 3 = 8
 ```
 
 #### Помощь
 ```bash
-./build/calculator_cli --help
+./build/calculator --help
 ```
 
 #### Загрузка истории при старте
 ```bash
-./build/calculator_cli --load-history myhistory.txt
+./build/calculator --load-history myhistory.txt
 ```
 
 #### Установка уровня логирования
 ```bash
-./build/calculator_cli --log-level DEBUG --log-file debug.log
+./build/calculator --log-level DEBUG --log-file debug.log
 ```
 
 #### Запуск в определённом режиме
 ```bash
-./build/calculator_cli --mode scientific
+./build/calculator --mode scientific
 ```
 
 ### Доступные опции:
@@ -148,8 +139,6 @@ history.saveBinary("history.bin");
 history.loadBinary("history.bin");
 ```
 
-В меню калькулятора можно выбрать формат при сохранении/загрузке.
-
 ---
 
 ## Архитектура Проекта
@@ -157,16 +146,14 @@ history.loadBinary("history.bin");
 ```
 PersonalProjectUsharau/
 ├── src/
-│   ├── backend/          # Общая логика (MathUtils, ExpressionEvaluator, etc.)
-│   ├── gui/              # Qt GUI компоненты
-│   ├── cli/              # Кнсольное приложение
-│   ├── utils/            # Утилиты (ArgumentParser, LinkedList)
-│   └── tests/            # Модульные тесты
-├── build/                # Артефакты сборки
-├── CMakeLists.txt        # Конфигурация сборки
-├── README.md             # Этот файл
-├── BUILD.md              # Детальная инструкция по сборке
-└── GUI_README.md         # Руководство по GUI
+│   ├── backend/          # Ядро: MathUtils, ExpressionEvaluator, History, Sorter, CalculatorEngine
+│   ├── cli/              # Интерфейс: CalculatorApp, Modes (Standard, Scientific, Programmer), DateMode
+│   ├── utils/            # Утилиты: ArgumentParser, LinkedList<T>
+│   └── tests/            # Тесты: Google Test реализации
+├── build/                # Директория сборки
+├── CMakeLists.txt        # Конфигурация сборки (CMake)
+├── README.md             # Общее описание (этот файл)
+└── BUILD.md              # Подробная инструкция по сборке на русском
 ```
 
 ---
@@ -180,17 +167,16 @@ PersonalProjectUsharau/
 
 ### Структуры Данных
 - **Собственный LinkedList<T>** - шаблонный двусвязный список с итераторами
-- **STL**: vector, map, string, algorithms (sort, find)
+- **STL**: vector, string, algorithms (swap, find)
 
 ### Файловый I/O
 - Текстовые файлы (fstream)
-- Бинарные файлы с магическими числами и версионированием
+- Бинарные файлы с версионированием
 - Сериализация объектов History
 
 ### Тестирование
 - **Google Test** framework
-- Покрытие всех ключевых функций
-- Проверка граничных случаев и ошибок
+- Покрытие всех ключевых функций и граничных случаев
 
 ---
 
@@ -202,32 +188,24 @@ PersonalProjectUsharau/
 1. Standard Mode
 2. Scientific Mode
 3. Programmer Mode
-4. Evaluate Expression (RPN)
-5. History Management
-6. Array Sorting
-0. Exit
+...
 > 2
 
---- Scientific Mode ---
-> sin(90)
+=== Scientific Mode ===
+sci> sin(90)
 = 1
 
-> 2 ^ 8
+sci> 2 ^ 8
 = 256
 ```
 
-### Прямое вычисление
-```bash
-$ ./calculator_cli --calc "sqrt(16) + log(2.718)"
-sqrt(16) + log(2.718) = 5
+### Programmer Mode (с битовыми операциями)
 ```
-
----
-
-## Дополнительная Документация
-
-- [BUILD.md](BUILD.md) - Подробные инструкции по сборке и зависимостям
-- [GUI_README.md](GUI_README.md) - Руководство по графическому интерфейсу
+prog> 3 << 2
+DEC: 12
+HEX: 0xC
+BIN: 0000...1100
+```
 
 ---
 
@@ -244,15 +222,13 @@ sqrt(16) + log(2.718) = 5
 
 ### Детали:
 - ✅ Наследование и полиморфизм (Mode hierarchy)
-- ✅ Двухуровневое меню (главное + подменю режимов)
+- ✅ Меню-ориентированный интерфейс
 - ✅ Аргументы командной строки (--calc, --help, --load-history, etc.)
-- ✅ Текстовые и бинарные файлы
-- ✅ Сериализация объектов (History)
-- ✅ STL контейнеры (vector, map) и алгоритмы
+- ✅ Текстовые и бинарные файлы (Serialization)
+- ✅ STL контейнеры и алгоритмы
 - ✅ Собственная структура данных (LinkedList<T>)
 - ✅ Google Test (25 тестов)
-- ✅ Doxygen-style комментарии
-- ✅ README с инструкциями
+- ✅ README и BUILD инструкции
 
 ---
 
@@ -260,4 +236,4 @@ sqrt(16) + log(2.718) = 5
 
 **Ушаров Дмитрий Павлович**  
 Группа 1, Курс ОиМП  
-2024 год
+2025 год
